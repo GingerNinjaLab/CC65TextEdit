@@ -1,46 +1,52 @@
 #include "unity.h"
 #include "TextEditor.h"
 
-unsigned char editorWidth,editorHeight;
-unsigned char x1,y1,x2,y2;
-unsigned char curX,curY;
-unsigned char k;
+unsigned char txtEditorWidth,txtEditorHeight;
+unsigned char txtX1,txtY1,txtX2,txtY2;
+unsigned char txtCurX,txtCurY;
+unsigned char txtK;
 
 void InitTextEditor(unsigned char width,
                     unsigned char height,
                     unsigned char x,
                     unsigned char y) {
-    editorWidth=width;
-    editorHeight=height;
-    x1=x;
-    y1=y;
-    x2=x1+width;
-    y2=y1+height;
-    curX=0;
-    curY=0;
+    txtEditorWidth=width;
+    txtEditorHeight=height;
+    txtX1=x;
+    txtY1=y;
+    txtX2=txtX1+width;
+    txtY2=txtY1+height;
+    txtCurX=0;
+    txtCurY=0;
 }
 
-unsigned char ShowTextEditor(char *buffer,unsigned char showBorder,unsigned char showStats) {
+unsigned char ShowTextEditor(char *title,char *buffer,unsigned char showBorder,unsigned char showStats) {
     unsigned char result=1;
     int bufferLength;
     int pos,a,b;
 
     if (showBorder==1) {
-        if (x1>0 && y1>0) {
+        if (txtX1>0 && txtY1>0) {
 
             //Top/bottom border
-            for (a=x1-1;a<x2+3;a++) {
-                gotoxy(a,y1-1);
+            for (a=txtX1-1;a<txtX2+3;a++) {
+                gotoxy(a,txtY1-1);
                 cputc(166);
-                gotoxy(a,y2+1);
+                gotoxy(a,txtY2+1);
                 cputc(166);
             }
 
+            if (title[0]!=0) {
+                a = (txtEditorWidth - strlen(title))/2;
+                gotoxy(a+txtX1,txtY1-1);
+                cprintf(title);
+            }
+
             //Side borders
-            for (b=y1-1;b<y2+1;b++) {
-                gotoxy(x1-1,b);
+            for (b=txtY1-1;b<txtY2+1;b++) {
+                gotoxy(txtX1-1,b);
                 cputc(166);
-                gotoxy(x2+3,b);
+                gotoxy(txtX2+3,b);
                 cputc(166);
             }
                 
@@ -52,95 +58,111 @@ unsigned char ShowTextEditor(char *buffer,unsigned char showBorder,unsigned char
         ShowStats();
     }
 
+    //Write out buffer
+    for (b=0;b<txtEditorHeight;b++) {
+        for (a=0;a<txtEditorWidth;a++) {
+            pos=b*txtEditorWidth + a;
+            gotoxy(a+txtX1,b+txtY1);
+            cputc(buffer[pos]);
+        }
+    }
+
     while (result) {
 
-        gotoxy(curX+x1,curY+y1);
+        gotoxy(txtCurX+txtX1,txtCurY+txtY1);
         cputc('#');
         //cputc(166);
 
-        k = cgetc();
-        if (k>31 && k<128) {
-            gotoxy(curX+x1,curY+y1);
-            cputc(k);
-            pos=curY*editorWidth + curX;
-            buffer[pos]=k;
-            curX++;
-            if (curX>x2) {
-                curX=0;
-                curY++;
+        txtK = cgetc();
+        if (txtK>31 && txtK!=TXTEDITOR_KEY_UP && txtK!=TXTEDITOR_KEY_DOWN && txtK!=TXTEDITOR_KEY_LEFT  && txtK!=TXTEDITOR_KEY_RIGHT && txtK!=TXTEDITOR_KEY_RETURN && txtK!=TXTEDITOR_KEY_ESCAPE && txtK!=TXTEDITOR_KEY_DELETE) {
+            gotoxy(txtCurX+txtX1,txtCurY+txtY1);
+            cputc(txtK);
+            pos=txtCurY*txtEditorWidth + txtCurX;
+            buffer[pos]=txtK;
+            txtCurX++;
+            if (txtCurX>txtX2) {
+                txtCurX=0;
+                txtCurY++;
             }
         }   
         //Delete 
-        if (k==20) {
-            if (curX>0) {
-                gotoxy(curX+x1,curY+y1);
+        if (txtK==TXTEDITOR_KEY_DELETE) {
+            if (txtCurX>0) {
+                gotoxy(txtCurX+txtX1,txtCurY+txtY1);
                 cputc(' ');
-                curX--;
-                gotoxy(curX+x1,curY+y1);
+                txtCurX--;
+                gotoxy(txtCurX+txtX1,txtCurY+txtY1);
                 cputc(' ');
-                pos=curY*editorWidth + curX;
+                pos=txtCurY*txtEditorWidth + txtCurX;
                 buffer[pos]=' ';
             }
-            if (curX==0 && curY>0) {
-                gotoxy(curX+x1,curY+y1);
+            /*
+            if (txtCurX==0 && txtCurY>0) {
+                gotoxy(txtCurX+txtX1,txtCurY+txtY1);
                 cputc(' ');
-                curX--;
-                curY--;
-                gotoxy(curX+x1,curY+y1);
+                txtCurX--;
+                txtCurY--;
+                gotoxy(txtCurX+txtX1,txtCurY+txtY1);
                 cputc(' ');
-                pos=curY*editorWidth + curX;
+                pos=txtCurY*editorWidth + txtCurX;
                 buffer[pos]=' ';
             }
+            */
         }
 
         //Return 
-        if (k==13) {
-            if (curY<editorHeight) {
-                gotoxy(curX+x1,curY+y1);
-                cputc(' ');
-                curX=0;
-                curY++;
+        if (txtK==TXTEDITOR_KEY_RETURN) {
+            if (txtCurY<txtEditorHeight) {
+                gotoxy(txtCurX+txtX1,txtCurY+txtY1);
+                pos=txtCurY*20 + txtCurX;
+                cputc(buffer[pos]);
+                txtCurX=0;
+                txtCurY++;
             }
         }
 
         //Down 
-        if (k==157) {
-            if (curY<editorHeight) {
-                gotoxy(curX+x1,curY+y1);
-                cputc(' ');
-                curY++;
+        if (txtK==TXTEDITOR_KEY_DOWN) {
+            if (txtCurY<txtEditorHeight) {
+                gotoxy(txtCurX+txtX1,txtCurY+txtY1);
+                pos=txtCurY*20 + txtCurX;
+                cputc(buffer[pos]);
+                txtCurY++;
             }
         }
 
         //Up 
-        if (k==145) {
-            if (curY>0) {
-                gotoxy(curX+x1,curY+y1);
-                cputc(' ');
-                curY--;
+        if (txtK==TXTEDITOR_KEY_UP) {
+            if (txtCurY>0) {
+                gotoxy(txtCurX+txtX1,txtCurY+txtY1);
+                pos=txtCurY*20 + txtCurX;
+                cputc(buffer[pos]);
+                txtCurY--;
             }
         }
 
         //Left 
-        if (k==157) {
-            if (curX>0) {
-                gotoxy(curX+x1,curY+y1);
-                cputc(' ');
-                curX--;
+        if (txtK==TXTEDITOR_KEY_LEFT) {
+            if (txtCurX>0) {
+                gotoxy(txtCurX+txtX1,txtCurY+txtY1);
+                pos=txtCurY*20 + txtCurX;
+                cputc(buffer[pos]);
+                txtCurX--;
             }
         }
 
         //Right 
-        if (k==29) {
-            if (curX<editorWidth) {
-                gotoxy(curX+x1,curY+y1);
-                cputc(' ');
-                curX++;
+        if (txtK==TXTEDITOR_KEY_RIGHT) {
+            if (txtCurX<txtEditorWidth) {
+                gotoxy(txtCurX+txtX1,txtCurY+txtY1);
+                pos=txtCurY*20 + txtCurX;
+                cputc(buffer[pos]);
+                txtCurX++;
             }
         }
 
         //Escape
-        if (k==3) {
+        if (txtK==TXTEDITOR_KEY_ESCAPE) {
             result=0;
         }
 
@@ -153,6 +175,6 @@ unsigned char ShowTextEditor(char *buffer,unsigned char showBorder,unsigned char
 }
 
 void ShowStats() {
-    gotoxy(x1+2,y2+1);
-    cprintf("k:[%i]  x:%i y:%i ",k,curX,curY);
+    gotoxy(txtX1+2,txtY2+1);
+    cprintf("k:[%i]  x:%i y:%i ",txtK,txtCurX,txtCurY);
 }

@@ -4,14 +4,16 @@
 #include "test.h"
 
 unsigned char textBuffer[800];
-unsigned char x,y,result,k;
+unsigned char x,y,result,k,running;
 int pos;
 unsigned char width,height;
+FILE *fp;
 
 int main (void)
 {
 
     clrscr();
+    running=1;
 
     width=10;
     height=20;
@@ -19,10 +21,18 @@ int main (void)
     for (pos=0;pos<800;pos++) {
         textBuffer[pos]=' ';
     }
+
+    //Load the file
+    cprintf("loading...\r\n");
+    fp = fopen("test.txt", "r");
+    fgets(textBuffer,800,fp);
+    fclose(fp);
+    cprintf("done\r\n");
+
     InitTextEditor(width,height,2,2);
 
     k=0;
-    while (k!='q') {
+    while (running) {
         result = ShowTextEditor("Sound code",textBuffer,1,1);
 
         clrscr();
@@ -36,8 +46,27 @@ int main (void)
             }
         }
         gotoxy(0,height+2);
+        cprintf("What next?\r\n");
+        cprintf("l. load\r\n");
+        cprintf("s. Save file\r\n");
+        cprintf("n. New file\r\n");
+        cprintf("q. quit\r\n");
         k = cgetc();
-        cprintf("q to quit, any other key to edit");
+        if (k=='s') {
+            //Save the file
+            cprintf("saving...\r\n");
+            fp = fopen("test.txt", "w");
+            fputs(textBuffer,fp);
+            if (fp == EOF) {
+                perror("fputs()");
+            }
+            fclose(fp);
+            cprintf("done\r\n");
+        }
+
+        if (k=='q') {
+            running=0;
+        }
         clrscr();
     }
 
